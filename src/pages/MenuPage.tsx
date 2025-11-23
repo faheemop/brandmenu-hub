@@ -41,7 +41,7 @@ const MenuPage = () => {
     queryFn: async () => {
       if (!brand || !branchId) return null;
       
-      const apiUrl = `{{step-dev}}/api/products/getAllProducts?pageNo=1&pageSize=1000&brandReference=${brand.apiReference}&categoryId=${selectedCategory}&includeModifiers=true&branchId=${branchId}`;
+      const apiUrl = `http://51.112.221.81:8000/api/products/getAllProducts?pageNo=1&pageSize=1000&brandReference=${brand.apiReference}&categoryId=${selectedCategory}&includeModifiers=true&branchId=${branchId}`;
       
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error("Failed to fetch products");
