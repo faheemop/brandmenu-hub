@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { getBrandBySlug } from "@/config/brands";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CategoryNavProps {
   selectedCategory: number | null;
@@ -27,12 +28,16 @@ export const CategoryNav = ({ selectedCategory, onCategoryChange }: CategoryNavP
     queryFn: async () => {
       if (!brand) return [];
       
-      const apiUrl = `http://51.112.221.81:8000/api/category/getCategoryList?brandReference=${brand.apiReference}`;
-      const response = await fetch(apiUrl);
-      if (!response.ok) throw new Error("Failed to fetch categories");
+      const params = new URLSearchParams({
+        brandReference: brand.apiReference,
+      });
       
-      const result = await response.json();
-      return result.data || [];
+      const { data, error } = await supabase.functions.invoke(`get-categories?${params.toString()}`, {
+        method: 'GET',
+      });
+
+      if (error) throw error;
+      return data.data || [];
     },
     enabled: !!brand,
   });
