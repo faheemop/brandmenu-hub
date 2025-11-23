@@ -22,7 +22,7 @@ interface Product {
 const MenuPage = () => {
   const { brandSlug, branchId } = useParams<{ brandSlug: string; branchId: string }>();
   const { language, t } = useLanguage();
-  const [selectedCategory, setSelectedCategory] = useState<number>(1);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   
   const brand = brandSlug ? getBrandBySlug(brandSlug) : undefined;
   const branch = brand && branchId ? getBrandBranch(brandSlug, parseInt(branchId)) : undefined;
@@ -37,11 +37,17 @@ const MenuPage = () => {
   }, [brand]);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["products", brand?.apiReference, selectedCategory, branchId],
+    queryKey: ["products", brand?.apiReference, selectedCategory],
     queryFn: async () => {
-      if (!brand || !branchId) return null;
+      if (!brand) return null;
       
-      const apiUrl = `http://51.112.221.81:8000/api/products/getAllProducts?pageNo=1&pageSize=1000&brandReference=${brand.apiReference}&categoryId=${selectedCategory}&includeModifiers=true&branchId=${branchId}`;
+      // Show all products when no category is selected
+      let apiUrl = `http://51.112.221.81:8000/api/products/getAllProducts?pageNo=1&pageSize=1000&brandReference=${brand.apiReference}`;
+      
+      // When category is selected, add filters with hard-coded branchId
+      if (selectedCategory !== null) {
+        apiUrl += `&categoryId=${selectedCategory}&includeModifiers=true&branchId=30`;
+      }
       
       const response = await fetch(apiUrl);
       if (!response.ok) throw new Error("Failed to fetch products");
@@ -49,10 +55,10 @@ const MenuPage = () => {
       const result = await response.json();
       return result.data || [];
     },
-    enabled: !!brand && !!branchId,
+    enabled: !!brand,
   });
 
-  if (!brand || !branch) {
+  if (!brand) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-menu-bg">
         <div className="text-center">
