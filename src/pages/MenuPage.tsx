@@ -7,6 +7,7 @@ import { ProductGrid } from "@/components/menu/ProductGrid";
 import { CategoryNav } from "@/components/menu/CategoryNav";
 import { MenuHeader } from "@/components/menu/MenuHeader";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -41,19 +42,26 @@ const MenuPage = () => {
     queryFn: async () => {
       if (!brand) return null;
       
-      // Show all products when no category is selected
-      let apiUrl = `http://51.112.221.81:8000/api/products/getAllProducts?pageNo=1&pageSize=1000&brandReference=${brand.apiReference}`;
+      // Build query params
+      const params = new URLSearchParams({
+        brandReference: brand.apiReference,
+        pageNo: '1',
+        pageSize: '1000',
+      });
       
-      // When category is selected, add filters with hard-coded branchId
+      // Add filters when category is selected
       if (selectedCategory !== null) {
-        apiUrl += `&categoryId=${selectedCategory}&includeModifiers=true&branchId=30`;
+        params.append('categoryId', selectedCategory.toString());
+        params.append('includeModifiers', 'true');
+        params.append('branchId', '30');
       }
       
-      const response = await fetch(apiUrl);
-      if (!response.ok) throw new Error("Failed to fetch products");
-      
-      const result = await response.json();
-      return result.data || [];
+      const { data, error } = await supabase.functions.invoke(`get-products?${params.toString()}`, {
+        method: 'GET',
+      });
+
+      if (error) throw error;
+      return data.data || [];
     },
     enabled: !!brand,
   });
