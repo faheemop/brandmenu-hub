@@ -15,7 +15,7 @@ interface CategoryNavProps {
 interface Category {
   id: number;
   name: string;
-  nameAr: string;
+  arabicName: string;
 }
 
 export const CategoryNav = ({ selectedCategory, onCategoryChange }: CategoryNavProps) => {
@@ -70,7 +70,7 @@ export const CategoryNav = ({ selectedCategory, onCategoryChange }: CategoryNavP
                     onClick={() => onCategoryChange(category.id)}
                     className="whitespace-nowrap"
                   >
-                    {language === "ar" ? category.nameAr : category.name}
+                    {language === "ar" ? category.arabicName : category.name}
                   </Button>
                 ))}
               </>

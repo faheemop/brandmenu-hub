@@ -11,12 +11,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
-  name: string;
-  nameAr?: string;
+  title: string;
+  arabicName?: string;
   description?: string;
-  descriptionAr?: string;
+  arabicDescription?: string;
   price: number;
-  image?: string;
+  image1?: string;
+  merchant_image?: string;
   modifiers?: any[];
 }
 

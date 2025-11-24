@@ -4,12 +4,13 @@ import { Badge } from "@/components/ui/badge";
 
 interface Product {
   id: string;
-  name: string;
-  nameAr?: string;
+  title: string;
+  arabicName?: string;
   description?: string;
-  descriptionAr?: string;
+  arabicDescription?: string;
   price: number;
-  image?: string;
+  image1?: string;
+  merchant_image?: string;
   modifiers?: any[];
 }
 
@@ -20,16 +21,17 @@ interface ProductCardProps {
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { language, t } = useLanguage();
 
-  const displayName = language === "ar" && product.nameAr ? product.nameAr : product.name;
+  const displayName = language === "ar" && product.arabicName ? product.arabicName : product.title;
   const displayDescription =
-    language === "ar" && product.descriptionAr ? product.descriptionAr : product.description;
+    language === "ar" && product.arabicDescription ? product.arabicDescription : product.description;
+  const displayImage = product.merchant_image || product.image1;
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-menu-card border-border/50">
       <div className="aspect-square overflow-hidden bg-muted">
-        {product.image ? (
+        {displayImage ? (
           <img
-            src={product.image}
+            src={displayImage}
             alt={displayName}
             className="w-full h-full object-cover"
           />
