@@ -1,6 +1,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Languages } from "lucide-react";
+import brandLogo from "@/assets/brand-logo.png";
 
 interface MenuHeaderProps {
   brandName?: string;
@@ -20,11 +21,11 @@ export const MenuHeader = ({ brandName, brandNameAr, branchName, branchNameAr }:
       <div className="container mx-auto px-4 py-4 max-w-7xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-2xl font-bold text-primary">
-                {displayBrandName?.[0] || "M"}
-              </span>
-            </div>
+            <img 
+              src={brandLogo} 
+              alt={displayBrandName || "Brand Logo"} 
+              className="h-10 w-auto"
+            />
             <div>
               <h1 className="text-xl font-bold text-foreground">
                 {displayBrandName || "Menu"}
