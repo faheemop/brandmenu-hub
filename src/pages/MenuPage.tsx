@@ -82,15 +82,23 @@ const MenuPage = () => {
     enabled: !!brandSlug && !!branchId,
   });
 
-  if (!brandSlug || !branchId) {
+  // Validate that params are actual values, not route templates
+  const isValidParams = brandSlug && branchId && 
+    !brandSlug.includes(':') && !branchId.includes(':') &&
+    !isNaN(parseInt(branchId));
+
+  if (!isValidParams) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-menu-bg">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <div className="text-center px-4">
           <h1 className="text-2xl font-bold text-foreground mb-2">
             {t("Invalid URL", "رابط غير صالح")}
           </h1>
           <p className="text-muted-foreground">
             {t("Please check your URL and try again", "يرجى التحقق من الرابط والمحاولة مرة أخرى")}
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            {t("Example: /menu/CODE231025109/1", "مثال: /menu/CODE231025109/1")}
           </p>
         </div>
       </div>
