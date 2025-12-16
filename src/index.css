@@ -17,11 +17,11 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 20 14% 20%;
 
-    /* Dynamic brand colors - will be overridden per brand */
-    --brand-primary: 25 95% 53%;
+    /* Brand colors - #976A4D */
+    --brand-primary: 25 33% 45%;
     --brand-primary-foreground: 0 0% 100%;
-    --brand-secondary: 20 14% 20%;
-    --brand-accent: 38 92% 50%;
+    --brand-secondary: 25 25% 35%;
+    --brand-accent: 25 40% 55%;
     
     --primary: var(--brand-primary);
     --primary-foreground: var(--brand-primary-foreground);
