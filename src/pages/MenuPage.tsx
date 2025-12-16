@@ -1,12 +1,13 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ProductGrid } from "@/components/menu/ProductGrid";
 import { CategoryNav } from "@/components/menu/CategoryNav";
 import { MenuHeader } from "@/components/menu/MenuHeader";
-import { Loader2 } from "lucide-react";
+import { Loader2, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 interface Product {
   id: string;
@@ -31,14 +32,21 @@ const MenuPage = () => {
   const { language, t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
+  // Validate params BEFORE hooks to prevent invalid API calls
+  const isValidParams = Boolean(
+    brandSlug && 
+    branchId && 
+    !brandSlug.includes(':') && 
+    !branchId.includes(':') &&
+    !isNaN(parseInt(branchId))
+  );
+
   // Fetch branch data
   const { data: branchData } = useQuery({
     queryKey: ["branches", brandSlug],
     queryFn: async () => {
-      if (!brandSlug) return null;
-      
       const params = new URLSearchParams({
-        brandReference: brandSlug,
+        brandReference: brandSlug!,
       });
       
       const { data, error } = await supabase.functions.invoke(`get-branches?${params.toString()}`, {
@@ -48,7 +56,7 @@ const MenuPage = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!brandSlug,
+    enabled: isValidParams,
   });
 
   const currentBranch = branchData?.data?.find((b: Branch) => b.id === parseInt(branchId || '0'));
@@ -56,17 +64,13 @@ const MenuPage = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["products", brandSlug, branchId, selectedCategory],
     queryFn: async () => {
-      if (!brandSlug || !branchId) return null;
-      
-      // Build query params
       const params = new URLSearchParams({
-        brandReference: brandSlug,
+        brandReference: brandSlug!,
         pageNo: '1',
         pageSize: '1000',
-        branchId: branchId,
+        branchId: branchId!,
       });
       
-      // Add filters when category is selected
       if (selectedCategory !== null) {
         params.append('categoryId', selectedCategory.toString());
         params.append('includeModifiers', 'true');
@@ -79,34 +83,32 @@ const MenuPage = () => {
       if (error) throw error;
       return data.data || [];
     },
-    enabled: !!brandSlug && !!branchId,
+    enabled: isValidParams,
   });
-
-  // Validate that params are actual values, not route templates
-  const isValidParams = brandSlug && branchId && 
-    !brandSlug.includes(':') && !branchId.includes(':') &&
-    !isNaN(parseInt(branchId));
 
   if (!isValidParams) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center px-4">
-          <h1 className="text-2xl font-bold text-foreground mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
             {t("Invalid URL", "رابط غير صالح")}
           </h1>
-          <p className="text-muted-foreground">
-            {t("Please check your URL and try again", "يرجى التحقق من الرابط والمحاولة مرة أخرى")}
+          <p className="text-muted-foreground mb-6">
+            {t("Please use a valid brand and branch URL", "يرجى استخدام رابط صالح للعلامة التجارية والفرع")}
           </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            {t("Example: /menu/CODE231025109/1", "مثال: /menu/CODE231025109/1")}
-          </p>
+          <Link to="/">
+            <Button className="gap-2">
+              <Home className="w-4 h-4" />
+              {t("Go to Home", "اذهب للرئيسية")}
+            </Button>
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-menu-bg">
+    <div className="min-h-screen bg-muted/30">
       <MenuHeader 
         branchName={currentBranch?.name}
         branchNameAr={currentBranch?.arabicName}
