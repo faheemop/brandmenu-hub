@@ -1,7 +1,6 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getBrandBySlug, getBrandBranch } from "@/config/brands";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ProductGrid } from "@/components/menu/ProductGrid";
 import { CategoryNav } from "@/components/menu/CategoryNav";
@@ -21,40 +20,56 @@ interface Product {
   modifiers?: any[];
 }
 
+interface Branch {
+  id: number;
+  name: string;
+  arabicName: string | null;
+}
+
 const MenuPage = () => {
   const { brandSlug, branchId } = useParams<{ brandSlug: string; branchId: string }>();
   const { language, t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  
-  const brand = brandSlug ? getBrandBySlug(brandSlug) : undefined;
-  const branch = brand && branchId ? getBrandBranch(brandSlug, parseInt(branchId)) : undefined;
 
-  // Apply brand theme
-  useEffect(() => {
-    if (brand) {
-      document.documentElement.style.setProperty("--brand-primary", brand.theme.primary);
-      document.documentElement.style.setProperty("--brand-secondary", brand.theme.secondary);
-      document.documentElement.style.setProperty("--brand-accent", brand.theme.accent);
-    }
-  }, [brand]);
+  // Fetch branch data
+  const { data: branchData } = useQuery({
+    queryKey: ["branches", brandSlug],
+    queryFn: async () => {
+      if (!brandSlug) return null;
+      
+      const params = new URLSearchParams({
+        brandReference: brandSlug,
+      });
+      
+      const { data, error } = await supabase.functions.invoke(`get-branches?${params.toString()}`, {
+        method: 'GET',
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!brandSlug,
+  });
+
+  const currentBranch = branchData?.data?.find((b: Branch) => b.id === parseInt(branchId || '0'));
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["products", brand?.apiReference, selectedCategory],
+    queryKey: ["products", brandSlug, branchId, selectedCategory],
     queryFn: async () => {
-      if (!brand) return null;
+      if (!brandSlug || !branchId) return null;
       
       // Build query params
       const params = new URLSearchParams({
-        brandReference: brand.apiReference,
+        brandReference: brandSlug,
         pageNo: '1',
         pageSize: '1000',
+        branchId: branchId,
       });
       
       // Add filters when category is selected
       if (selectedCategory !== null) {
         params.append('categoryId', selectedCategory.toString());
         params.append('includeModifiers', 'true');
-        params.append('branchId', '30');
       }
       
       const { data, error } = await supabase.functions.invoke(`get-products?${params.toString()}`, {
@@ -64,15 +79,15 @@ const MenuPage = () => {
       if (error) throw error;
       return data.data || [];
     },
-    enabled: !!brand,
+    enabled: !!brandSlug && !!branchId,
   });
 
-  if (!brand) {
+  if (!brandSlug || !branchId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-menu-bg">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            {t("Brand Not Found", "العلامة التجارية غير موجودة")}
+            {t("Invalid URL", "رابط غير صالح")}
           </h1>
           <p className="text-muted-foreground">
             {t("Please check your URL and try again", "يرجى التحقق من الرابط والمحاولة مرة أخرى")}
@@ -84,7 +99,10 @@ const MenuPage = () => {
 
   return (
     <div className="min-h-screen bg-menu-bg">
-      <MenuHeader brand={brand} branch={branch} />
+      <MenuHeader 
+        branchName={currentBranch?.name}
+        branchNameAr={currentBranch?.arabicName}
+      />
       
       <CategoryNav
         selectedCategory={selectedCategory}
