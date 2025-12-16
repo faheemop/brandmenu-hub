@@ -1,1 +1,10 @@
 project_id = "zaovvfvwbyaysqwtulgb"
+
+[functions.get-products]
+verify_jwt = false
+
+[functions.get-categories]
+verify_jwt = false
+
+[functions.get-branches]
+verify_jwt = false

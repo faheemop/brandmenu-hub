@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
-import { getBrandBySlug } from "@/config/brands";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -21,15 +20,14 @@ interface Category {
 export const CategoryNav = ({ selectedCategory, onCategoryChange }: CategoryNavProps) => {
   const { language, t } = useLanguage();
   const { brandSlug } = useParams<{ brandSlug: string }>();
-  const brand = brandSlug ? getBrandBySlug(brandSlug) : undefined;
 
   const { data: categories, isLoading } = useQuery({
-    queryKey: ["categories", brand?.apiReference],
+    queryKey: ["categories", brandSlug],
     queryFn: async () => {
-      if (!brand) return [];
+      if (!brandSlug) return [];
       
       const params = new URLSearchParams({
-        brandReference: brand.apiReference,
+        brandReference: brandSlug,
       });
       
       const { data, error } = await supabase.functions.invoke(`get-categories?${params.toString()}`, {
@@ -39,7 +37,7 @@ export const CategoryNav = ({ selectedCategory, onCategoryChange }: CategoryNavP
       if (error) throw error;
       return data.data || [];
     },
-    enabled: !!brand,
+    enabled: !!brandSlug,
   });
 
   return (
