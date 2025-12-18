@@ -1,13 +1,14 @@
 import { ProductCard } from "./ProductCard";
 
 interface Product {
-  id: string;
+  id: number;
   title: string;
   arabicName?: string;
   description?: string;
   arabicDescription?: string;
   price: number;
-  image1?: string;
+  is_active: boolean;
+  image1?: string | null;
   merchant_image?: string;
   modifiers?: any[];
 }
