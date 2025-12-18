@@ -5,20 +5,25 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { ProductGrid } from "@/components/menu/ProductGrid";
 import { CategoryNav } from "@/components/menu/CategoryNav";
 import { MenuHeader } from "@/components/menu/MenuHeader";
+import { ProductDetailDialog } from "@/components/menu/ProductDetailDialog";
 import { Loader2, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { generateSlug } from "@/components/menu/BranchCard";
 
 interface Product {
-  id: string;
+  id: number;
   title: string;
   arabicName?: string;
   description?: string;
   arabicDescription?: string;
   price: number;
-  image1?: string;
+  is_active: boolean;
+  image1?: string | null;
   merchant_image?: string;
   modifiers?: any[];
+  calories?: number;
+  preparationTime?: number;
 }
 
 interface Branch {
@@ -28,21 +33,21 @@ interface Branch {
 }
 
 const MenuPage = () => {
-  const { brandSlug, branchId } = useParams<{ brandSlug: string; branchId: string }>();
+  const { brandSlug, branchSlug } = useParams<{ brandSlug: string; branchSlug: string }>();
   const { language, t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Validate params BEFORE hooks to prevent invalid API calls
+  // Validate params
   const isValidParams = Boolean(
     brandSlug && 
-    branchId && 
+    branchSlug && 
     !brandSlug.includes(':') && 
-    !branchId.includes(':') &&
-    !isNaN(parseInt(branchId))
+    !branchSlug.includes(':')
   );
 
-  // Fetch branch data
-  const { data: branchData } = useQuery({
+  // Fetch branch data to find branch ID from slug
+  const { data: branchData, isLoading: branchLoading } = useQuery({
     queryKey: ["branches", brandSlug],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -59,7 +64,13 @@ const MenuPage = () => {
     enabled: isValidParams,
   });
 
-  const currentBranch = branchData?.data?.find((b: Branch) => b.id === parseInt(branchId || '0'));
+  // Find the current branch by matching slug
+  const currentBranch = branchData?.data?.find((b: Branch) => {
+    const slug = generateSlug(b.name, b.id);
+    return slug === branchSlug;
+  });
+
+  const branchId = currentBranch?.id;
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["products", brandSlug, branchId, selectedCategory],
@@ -68,7 +79,7 @@ const MenuPage = () => {
         brandReference: brandSlug!,
         pageNo: '1',
         pageSize: '1000',
-        branchId: branchId!,
+        branchId: branchId!.toString(),
       });
       
       if (selectedCategory !== null) {
@@ -83,7 +94,7 @@ const MenuPage = () => {
       if (error) throw error;
       return data.data || [];
     },
-    enabled: isValidParams,
+    enabled: isValidParams && !!branchId,
   });
 
   if (!isValidParams) {
@@ -100,6 +111,34 @@ const MenuPage = () => {
             <Button className="gap-2">
               <Home className="w-4 h-4" />
               {t("Go to Home", "اذهب للرئيسية")}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (branchLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!currentBranch) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <div className="text-center px-4">
+          <h1 className="text-2xl font-bold text-foreground mb-4">
+            {t("Branch Not Found", "الفرع غير موجود")}
+          </h1>
+          <p className="text-muted-foreground mb-6">
+            {t("The branch you're looking for doesn't exist", "الفرع الذي تبحث عنه غير موجود")}
+          </p>
+          <Link to={`/menu/${brandSlug}`}>
+            <Button className="gap-2">
+              {t("View All Branches", "عرض جميع الفروع")}
             </Button>
           </Link>
         </div>
@@ -134,8 +173,19 @@ const MenuPage = () => {
           </div>
         )}
 
-        {data && <ProductGrid products={data} />}
+        {data && (
+          <ProductGrid 
+            products={data} 
+            onProductClick={setSelectedProduct}
+          />
+        )}
       </main>
+
+      <ProductDetailDialog
+        product={selectedProduct}
+        open={!!selectedProduct}
+        onOpenChange={(open) => !open && setSelectedProduct(null)}
+      />
     </div>
   );
 };

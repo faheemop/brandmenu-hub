@@ -15,9 +15,10 @@ interface Product {
 
 interface ProductGridProps {
   products: Product[];
+  onProductClick?: (product: Product) => void;
 }
 
-export const ProductGrid = ({ products }: ProductGridProps) => {
+export const ProductGrid = ({ products, onProductClick }: ProductGridProps) => {
   if (!products || products.length === 0) {
     return (
       <div className="text-center py-20">
@@ -29,7 +30,11 @@ export const ProductGrid = ({ products }: ProductGridProps) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard 
+          key={product.id} 
+          product={product} 
+          onClick={() => onProductClick?.(product)}
+        />
       ))}
     </div>
   );
