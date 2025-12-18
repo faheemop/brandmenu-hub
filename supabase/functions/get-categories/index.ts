@@ -12,6 +12,7 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const brandReference = url.searchParams.get('brandReference');
+    const branchId = url.searchParams.get('branchId');
 
     if (!brandReference) {
       return new Response(
@@ -20,7 +21,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiUrl = `https://api-order.wags.sa/api/category/getCategoryList?brandReference=${brandReference}`;
+    let apiUrl = `https://api-order.wags.sa/api/category/getCategoryList?brandReference=${brandReference}`;
+    
+    if (branchId) {
+      apiUrl += `&branchId=${branchId}`;
+    }
     
     console.log('Fetching categories from:', apiUrl);
 
