@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     }
 
     // Build API URL
-    let apiUrl = `http://51.112.221.81:8000/api/products/getAllProducts?pageNo=${pageNo}&pageSize=${pageSize}&brandReference=${brandReference}`;
+    let apiUrl = `https://api-order.wags.sa/api/products/getAllProducts?pageNo=${pageNo}&pageSize=${pageSize}&brandReference=${brandReference}`;
     
     if (categoryId) {
       apiUrl += `&categoryId=${categoryId}`;
