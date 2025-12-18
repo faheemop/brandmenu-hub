@@ -1,8 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Loader2, MapPin, Clock, ChevronRight } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { BranchCard, generateSlug } from "@/components/menu/BranchCard";
 
 interface Branch {
   id: number;
@@ -47,8 +48,9 @@ const BranchSelectPage = () => {
     enabled: !!brandSlug,
   });
 
-  const handleBranchSelect = (branchId: number) => {
-    navigate(`/menu/${brandSlug}/${branchId}`);
+  const handleBranchSelect = (branch: Branch) => {
+    const branchSlug = generateSlug(branch.name, branch.id);
+    navigate(`/menu/${brandSlug}/${branchSlug}`);
   };
 
   if (isLoading) {
@@ -80,7 +82,7 @@ const BranchSelectPage = () => {
     <div className="min-h-screen bg-muted/30">
       {/* Header */}
       <div className="bg-primary text-primary-foreground py-8 px-4">
-        <div className="container mx-auto max-w-xl text-center">
+        <div className="container mx-auto max-w-4xl text-center">
           <h1 className="text-2xl font-bold mb-2">
             {t("Our Branches", "فروعنا")}
           </h1>
@@ -90,55 +92,27 @@ const BranchSelectPage = () => {
         </div>
       </div>
 
-      {/* Branch List */}
-      <div className="container mx-auto px-4 py-6 max-w-xl">
-        <div className="space-y-3">
-          {activeBranches.map((branch) => {
-            const displayName = language === "ar" && branch.arabicName ? branch.arabicName : branch.name;
-            const displayAddress = language === "ar" && branch.arabicAddress ? branch.arabicAddress : branch.address;
-            
-            return (
-              <button
-                key={branch.id}
-                onClick={() => handleBranchSelect(branch.id)}
-                className="w-full bg-card rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 border border-border/50 text-left rtl:text-right flex items-center gap-4"
-              >
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-6 h-6 text-primary" />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground truncate">
-                    {displayName}
-                  </h3>
-                  <p className="text-muted-foreground text-sm truncate">
-                    {displayAddress}
-                  </p>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                    <Clock className="w-3 h-3" />
-                    <span>
-                      {branch.is24Hours 
-                        ? t("24 Hours", "٢٤ ساعة")
-                        : `${branch.opening_time} - ${branch.closing_time}`
-                      }
-                    </span>
-                  </div>
-                </div>
-
-                <ChevronRight className="w-5 h-5 text-muted-foreground rtl:rotate-180" />
-              </button>
-            );
-          })}
-
-          {activeBranches.length === 0 && (
-            <div className="text-center py-16">
-              <MapPin className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                {t("No branches available", "لا توجد فروع متاحة")}
-              </p>
-            </div>
-          )}
+      {/* Branch Grid */}
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {activeBranches.map((branch) => (
+            <BranchCard
+              key={branch.id}
+              branch={branch}
+              brandSlug={brandSlug!}
+              onClick={() => handleBranchSelect(branch)}
+            />
+          ))}
         </div>
+
+        {activeBranches.length === 0 && (
+          <div className="text-center py-16">
+            <MapPin className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              {t("No branches available", "لا توجد فروع متاحة")}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

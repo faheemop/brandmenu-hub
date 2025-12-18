@@ -9,16 +9,17 @@ interface Product {
   description?: string;
   arabicDescription?: string;
   price: number;
-  is_active: boolean; // Backend key
+  is_active: boolean;
   image1?: string | null;
   merchant_image?: string;
 }
 
 interface ProductCardProps {
   product: Product;
+  onClick?: () => void;
 }
 
-export const ProductCard = ({ product }: ProductCardProps) => {
+export const ProductCard = ({ product, onClick }: ProductCardProps) => {
   const { language, t } = useLanguage();
 
   const displayName =
@@ -26,7 +27,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       ? product.arabicName
       : product.title;
 
-  // Jo bhi backend se aa raha hai wahi dikhayenge
   const displayDescription =
     language === "ar" && product.arabicDescription
       ? product.arabicDescription
@@ -35,7 +35,10 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const displayImage = product.merchant_image || product.image1;
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-menu-card border-border/50">
+    <Card 
+      className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-menu-card border-border/50 cursor-pointer"
+      onClick={onClick}
+    >
       <div className="aspect-square overflow-hidden bg-muted">
         {displayImage ? (
           <img
@@ -57,7 +60,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <h3 className="font-semibold text-lg text-foreground line-clamp-2">
             {displayName}
           </h3>
-          {/* Active Badge */}
           {product.is_active && (
             <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] h-5 hover:text-white">
               {t("Active", "نشط")}
@@ -65,7 +67,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
 
-        {/* Description: Jo backend se aa raha hai wahi show hoga */}
         {displayDescription !== undefined && displayDescription !== null && (
           <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
             {displayDescription}
@@ -78,7 +79,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <span className="text-sm">{t("SAR", "ر.س")}</span>
           </span>
 
-          {/* Agar inactive hai toh yahan bhi dikha sakte hain */}
           {!product.is_active && (
             <span className="text-xs text-destructive font-medium">
               {t("Unavailable", "غير متوفر")}
