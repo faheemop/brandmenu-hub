@@ -34,18 +34,25 @@ const BranchSelectPage = () => {
   const { language, t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: branchData, isLoading, error } = useQuery({
+  const {
+    data: branchData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["branches", brandSlug],
     queryFn: async () => {
       if (!brandSlug) return null;
-      
+
       const params = new URLSearchParams({
         brandReference: brandSlug,
       });
-      
-      const { data, error } = await supabase.functions.invoke(`get-branches?${params.toString()}`, {
-        method: 'GET',
-      });
+
+      const { data, error } = await supabase.functions.invoke(
+        `get-branches?${params.toString()}`,
+        {
+          method: "GET",
+        }
+      );
 
       if (error) throw error;
       return data as BranchResponse;
@@ -58,10 +65,15 @@ const BranchSelectPage = () => {
     navigate(`/menu/${brandSlug}/${branchSlug}`);
   };
 
-  const activeBranches = branchData?.data?.filter(branch => branch.active) || [];
+  // CHANGE: Filter hata diya gaya hai taake sari branches show hon
+  const activeBranches = branchData?.data || [];
+
   const totalPages = Math.ceil(activeBranches.length / BRANCHES_PER_PAGE);
   const startIndex = (currentPage - 1) * BRANCHES_PER_PAGE;
-  const paginatedBranches = activeBranches.slice(startIndex, startIndex + BRANCHES_PER_PAGE);
+  const paginatedBranches = activeBranches.slice(
+    startIndex,
+    startIndex + BRANCHES_PER_PAGE
+  );
 
   if (isLoading) {
     return (
@@ -87,7 +99,10 @@ const BranchSelectPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30" dir={language === "ar" ? "rtl" : "ltr"}>
+    <div
+      className="min-h-screen bg-muted/30"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
       {/* Header */}
       <div className="bg-primary text-primary-foreground py-6 sm:py-8 px-4">
         <div className="container mx-auto max-w-4xl text-center">
@@ -128,32 +143,38 @@ const BranchSelectPage = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
               className="gap-1"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">{t("Previous", "السابق")}</span>
+              <span className="hidden sm:inline">
+                {t("Previous", "السابق")}
+              </span>
             </Button>
-            
+
             <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentPage(page)}
-                  className="w-8 h-8 p-0"
-                >
-                  {page}
-                </Button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
             </div>
 
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
               className="gap-1"
             >

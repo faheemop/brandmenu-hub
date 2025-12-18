@@ -1,12 +1,8 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Clock, Flame } from "lucide-react";
+import { Clock, Flame } from "lucide-react"; // X hata diya kyunke wo use nahi ho raha tha
 
 interface Product {
   id: number;
@@ -52,13 +48,13 @@ export const ProductDetailDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
+      <DialogContent
         className="max-w-[95vw] sm:max-w-md p-0 overflow-hidden rounded-2xl gap-0"
         dir={language === "ar" ? "rtl" : "ltr"}
       >
         {/* Hidden title for accessibility */}
         <DialogTitle className="sr-only">{displayName}</DialogTitle>
-        
+
         {/* Image Section */}
         {displayImage && (
           <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
@@ -69,9 +65,11 @@ export const ProductDetailDialog = ({
             />
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
-            
-            {/* Status badge */}
-            <div className="absolute top-3 right-3">
+
+            {/* CHANGE: Pehle ye 'right-3' tha, ab 'left-3' kar diya hai.
+               Is se ye Close button (jo right side par hota hai) ke neechay nahi aayega.
+            */}
+            <div className="absolute top-3 left-3">
               {product.is_active ? (
                 <Badge className="bg-green-500 text-white border-0 text-xs shadow-md">
                   {t("Available", "متوفر")}
@@ -109,13 +107,17 @@ export const ProductDetailDialog = ({
                 {product.calories && (
                   <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
                     <Flame className="w-3.5 h-3.5" />
-                    <span>{product.calories} {t("Cal", "سعرة")}</span>
+                    <span>
+                      {product.calories} {t("Cal", "سعرة")}
+                    </span>
                   </div>
                 )}
                 {product.preparationTime && (
                   <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>{product.preparationTime} {t("min", "دقيقة")}</span>
+                    <span>
+                      {product.preparationTime} {t("min", "دقيقة")}
+                    </span>
                   </div>
                 )}
               </div>
@@ -144,22 +146,24 @@ export const ProductDetailDialog = ({
                       </p>
                       {modifier.options && modifier.options.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
-                          {modifier.options.map((opt: any, optIndex: number) => (
-                            <Badge
-                              key={optIndex}
-                              variant="outline"
-                              className="text-xs font-normal"
-                            >
-                              {language === "ar" && opt.arabicName
-                                ? opt.arabicName
-                                : opt.name}
-                              {opt.price > 0 && (
-                                <span className="text-primary ms-1">
-                                  +{opt.price}
-                                </span>
-                              )}
-                            </Badge>
-                          ))}
+                          {modifier.options.map(
+                            (opt: any, optIndex: number) => (
+                              <Badge
+                                key={optIndex}
+                                variant="outline"
+                                className="text-xs font-normal"
+                              >
+                                {language === "ar" && opt.arabicName
+                                  ? opt.arabicName
+                                  : opt.name}
+                                {opt.price > 0 && (
+                                  <span className="text-primary ms-1">
+                                    +{opt.price}
+                                  </span>
+                                )}
+                              </Badge>
+                            )
+                          )}
                         </div>
                       )}
                     </div>

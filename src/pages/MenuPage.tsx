@@ -11,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { generateSlug } from "@/components/menu/BranchCard";
 
+// CHANGE: Base URL constant add kiya gaya hai
+const API_BASE_URL = "https://api-order.wags.sa";
+
 interface Product {
   id: number;
   title: string;
@@ -34,17 +37,20 @@ interface Branch {
 }
 
 const MenuPage = () => {
-  const { brandSlug, branchSlug } = useParams<{ brandSlug: string; branchSlug: string }>();
+  const { brandSlug, branchSlug } = useParams<{
+    brandSlug: string;
+    branchSlug: string;
+  }>();
   const { language, t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Validate params
   const isValidParams = Boolean(
-    brandSlug && 
-    branchSlug && 
-    !brandSlug.includes(':') && 
-    !branchSlug.includes(':')
+    brandSlug &&
+      branchSlug &&
+      !brandSlug.includes(":") &&
+      !branchSlug.includes(":")
   );
 
   // Fetch branch data to find branch ID from slug
@@ -54,10 +60,13 @@ const MenuPage = () => {
       const params = new URLSearchParams({
         brandReference: brandSlug!,
       });
-      
-      const { data, error } = await supabase.functions.invoke(`get-branches?${params.toString()}`, {
-        method: 'GET',
-      });
+
+      const { data, error } = await supabase.functions.invoke(
+        `get-branches?${params.toString()}`,
+        {
+          method: "GET",
+        }
+      );
 
       if (error) throw error;
       return data;
@@ -78,25 +87,35 @@ const MenuPage = () => {
     queryFn: async () => {
       const params = new URLSearchParams({
         brandReference: brandSlug!,
-        pageNo: '1',
-        pageSize: '1000',
+        pageNo: "1",
+        pageSize: "1000",
         branchId: branchId!.toString(),
       });
-      
+
       if (selectedCategory !== null) {
-        params.append('categoryId', selectedCategory.toString());
-        params.append('includeModifiers', 'true');
+        params.append("categoryId", selectedCategory.toString());
+        params.append("includeModifiers", "true");
       }
-      
-      const { data, error } = await supabase.functions.invoke(`get-products?${params.toString()}`, {
-        method: 'GET',
-      });
+
+      const { data, error } = await supabase.functions.invoke(
+        `get-products?${params.toString()}`,
+        {
+          method: "GET",
+        }
+      );
 
       if (error) throw error;
       return data.data || [];
     },
     enabled: isValidParams && !!branchId,
   });
+
+  // CHANGE: Helper function to fix image URL
+  const getFullImageUrl = (imagePath: string | null | undefined) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith("http")) return imagePath;
+    return `${API_BASE_URL}/${imagePath.replace(/^\/+/, "")}`;
+  };
 
   if (!isValidParams) {
     return (
@@ -106,7 +125,10 @@ const MenuPage = () => {
             {t("Invalid URL", "رابط غير صالح")}
           </h1>
           <p className="text-muted-foreground mb-6 text-sm sm:text-base">
-            {t("Please use a valid brand and branch URL", "يرجى استخدام رابط صالح للعلامة التجارية والفرع")}
+            {t(
+              "Please use a valid brand and branch URL",
+              "يرجى استخدام رابط صالح للعلامة التجارية والفرع"
+            )}
           </p>
           <Link to="/">
             <Button className="gap-2">
@@ -135,7 +157,10 @@ const MenuPage = () => {
             {t("Branch Not Found", "الفرع غير موجود")}
           </h1>
           <p className="text-muted-foreground mb-6 text-sm sm:text-base">
-            {t("The branch you're looking for doesn't exist", "الفرع الذي تبحث عنه غير موجود")}
+            {t(
+              "The branch you're looking for doesn't exist",
+              "الفرع الذي تبحث عنه غير موجود"
+            )}
           </p>
           <Link to={`/menu/${brandSlug}`}>
             <Button className="gap-2">
@@ -148,13 +173,17 @@ const MenuPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30" dir={language === "ar" ? "rtl" : "ltr"}>
-      <MenuHeader 
+    <div
+      className="min-h-screen bg-muted/30"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
+      <MenuHeader
         branchName={currentBranch?.name}
         branchNameAr={currentBranch?.arabicName}
-        branchImage={currentBranch?.image}
+        // CHANGE: Yahan getFullImageUrl function use kiya gaya hai
+        branchImage={getFullImageUrl(currentBranch?.image)}
       />
-      
+
       <CategoryNav
         selectedCategory={selectedCategory}
         onCategoryChange={setSelectedCategory}
@@ -178,10 +207,7 @@ const MenuPage = () => {
         )}
 
         {data && (
-          <ProductGrid 
-            products={data} 
-            onProductClick={setSelectedProduct}
-          />
+          <ProductGrid products={data} onProductClick={setSelectedProduct} />
         )}
       </main>
 
