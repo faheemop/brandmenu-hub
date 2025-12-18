@@ -30,6 +30,7 @@ interface Branch {
   id: number;
   name: string;
   arabicName: string | null;
+  image: string | null;
 }
 
 const MenuPage = () => {
@@ -101,10 +102,10 @@ const MenuPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center px-4">
-          <h1 className="text-2xl font-bold text-foreground mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-4">
             {t("Invalid URL", "رابط غير صالح")}
           </h1>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-muted-foreground mb-6 text-sm sm:text-base">
             {t("Please use a valid brand and branch URL", "يرجى استخدام رابط صالح للعلامة التجارية والفرع")}
           </p>
           <Link to="/">
@@ -130,10 +131,10 @@ const MenuPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center px-4">
-          <h1 className="text-2xl font-bold text-foreground mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-4">
             {t("Branch Not Found", "الفرع غير موجود")}
           </h1>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-muted-foreground mb-6 text-sm sm:text-base">
             {t("The branch you're looking for doesn't exist", "الفرع الذي تبحث عنه غير موجود")}
           </p>
           <Link to={`/menu/${brandSlug}`}>
@@ -147,18 +148,21 @@ const MenuPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-muted/30" dir={language === "ar" ? "rtl" : "ltr"}>
       <MenuHeader 
         branchName={currentBranch?.name}
         branchNameAr={currentBranch?.arabicName}
+        branchImage={currentBranch?.image}
       />
       
       <CategoryNav
         selectedCategory={selectedCategory}
         onCategoryChange={setSelectedCategory}
+        brandSlug={brandSlug!}
+        branchId={branchId!}
       />
 
-      <main className="container mx-auto px-4 py-6 max-w-7xl">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {isLoading && (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -167,7 +171,7 @@ const MenuPage = () => {
 
         {error && (
           <div className="text-center py-20">
-            <p className="text-destructive">
+            <p className="text-destructive text-sm sm:text-base">
               {t("Failed to load products", "فشل تحميل المنتجات")}
             </p>
           </div>
