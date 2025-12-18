@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiUrl = `http://51.112.221.81:8000/api/branch/all?brandReference=${brandReference}`;
+    const apiUrl = `https://api-order.wags.sa/api/branch/all?brandReference=${brandReference}`;
 
     console.log('Fetching branches from:', apiUrl);
 
