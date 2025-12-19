@@ -2,6 +2,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Clock } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useNavigate } from "react-router-dom";
 
 interface Branch {
   id: number;
@@ -34,6 +35,7 @@ const generateSlug = (name: string, id: number): string => {
 
 export const BranchCard = ({ branch, brandSlug, onClick }: BranchCardProps) => {
   const { language, t } = useLanguage();
+  const navigate = useNavigate();
 
   const displayName =
     language === "ar" && branch.arabicName ? branch.arabicName : branch.name;
@@ -43,12 +45,17 @@ export const BranchCard = ({ branch, brandSlug, onClick }: BranchCardProps) => {
       : branch.address;
 
   const branchSlug = generateSlug(branch.name, branch.id);
-  const menuUrl = `${window.location.origin}/menu/${brandSlug}/${branchSlug}`;
+  const menuUrl = `${window.location.origin}/menu/${branchSlug}`;
+
+  const handleClick = () => {
+    navigate(`/menu/${branchSlug}`);
+    onClick();
+  };
 
   return (
     <Card
       className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer bg-card border-border/50"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <CardContent className="p-5">
         <div className="flex flex-col items-center text-center">

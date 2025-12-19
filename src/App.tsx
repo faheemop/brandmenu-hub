@@ -19,6 +19,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/menu" replace />} />
             <Route path="/menu" element={<MenuPage />} />
+            <Route path="/menu/:branchSlug" element={<MenuPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

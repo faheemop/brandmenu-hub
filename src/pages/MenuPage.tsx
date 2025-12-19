@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useParams, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ProductGrid } from "@/components/menu/ProductGrid";
 import { CategoryNav } from "@/components/menu/CategoryNav";
@@ -8,7 +9,7 @@ import { ProductDetailDialog } from "@/components/menu/ProductDetailDialog";
 import { Loader2, MapPin, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { BranchCard } from "@/components/menu/BranchCard";
+import { BranchCard, generateSlug } from "@/components/menu/BranchCard";
 
 const API_BASE_URL = "https://api-order.wags.sa";
 const DEFAULT_BRAND_REFERENCE = "CODE231025109";
@@ -50,6 +51,8 @@ interface BranchResponse {
 
 const MenuPage = () => {
   const { language, t } = useLanguage();
+  const { branchSlug } = useParams<{ branchSlug?: string }>();
+  const navigate = useNavigate();
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -80,6 +83,18 @@ const MenuPage = () => {
       return data as BranchResponse;
     },
   });
+
+  // Auto-select branch from URL
+  useEffect(() => {
+    if (branchSlug && branchData?.data && !selectedBranch) {
+      const branch = branchData.data.find(
+        (b) => generateSlug(b.name, b.id) === branchSlug
+      );
+      if (branch) {
+        setSelectedBranch(branch);
+      }
+    }
+  }, [branchSlug, branchData, selectedBranch]);
 
   // Fetch products when branch is selected
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
@@ -119,11 +134,14 @@ const MenuPage = () => {
   const handleBranchSelect = (branch: Branch) => {
     setSelectedBranch(branch);
     setSelectedCategory(null);
+    const slug = generateSlug(branch.name, branch.id);
+    navigate(`/menu/${slug}`);
   };
 
   const handleBackToBranches = () => {
     setSelectedBranch(null);
     setSelectedCategory(null);
+    navigate('/menu');
   };
 
   // Branch list pagination
