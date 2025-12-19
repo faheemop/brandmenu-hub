@@ -1,4 +1,3 @@
-import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -6,13 +5,14 @@ import { ProductGrid } from "@/components/menu/ProductGrid";
 import { CategoryNav } from "@/components/menu/CategoryNav";
 import { MenuHeader } from "@/components/menu/MenuHeader";
 import { ProductDetailDialog } from "@/components/menu/ProductDetailDialog";
-import { Loader2, Home } from "lucide-react";
+import { Loader2, MapPin, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { generateSlug } from "@/components/menu/BranchCard";
+import { BranchCard } from "@/components/menu/BranchCard";
 
-// CHANGE: Base URL constant add kiya gaya hai
 const API_BASE_URL = "https://api-order.wags.sa";
+const DEFAULT_BRAND_REFERENCE = "CODE231025109";
+const BRANCHES_PER_PAGE = 6;
 
 interface Product {
   id: number;
@@ -33,32 +33,40 @@ interface Branch {
   id: number;
   name: string;
   arabicName: string | null;
+  address: string;
+  arabicAddress: string | null;
+  opening_time: string;
+  closing_time: string;
+  is24Hours: boolean;
+  active: boolean;
   image: string | null;
 }
 
+interface BranchResponse {
+  isError: boolean;
+  message: string;
+  data: Branch[];
+}
+
 const MenuPage = () => {
-  const { brandSlug, branchSlug } = useParams<{
-    brandSlug: string;
-    branchSlug: string;
-  }>();
   const { language, t } = useLanguage();
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Validate params
-  const isValidParams = Boolean(
-    brandSlug &&
-      branchSlug &&
-      !brandSlug.includes(":") &&
-      !branchSlug.includes(":")
-  );
+  const brandReference = DEFAULT_BRAND_REFERENCE;
 
-  // Fetch branch data to find branch ID from slug
-  const { data: branchData, isLoading: branchLoading } = useQuery({
-    queryKey: ["branches", brandSlug],
+  // Fetch branches
+  const {
+    data: branchData,
+    isLoading: branchLoading,
+    error: branchError,
+  } = useQuery({
+    queryKey: ["branches", brandReference],
     queryFn: async () => {
       const params = new URLSearchParams({
-        brandReference: brandSlug!,
+        brandReference: brandReference,
       });
 
       const { data, error } = await supabase.functions.invoke(
@@ -69,27 +77,19 @@ const MenuPage = () => {
       );
 
       if (error) throw error;
-      return data;
+      return data as BranchResponse;
     },
-    enabled: isValidParams,
   });
 
-  // Find the current branch by matching slug
-  const currentBranch = branchData?.data?.find((b: Branch) => {
-    const slug = generateSlug(b.name, b.id);
-    return slug === branchSlug;
-  });
-
-  const branchId = currentBranch?.id;
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["products", brandSlug, branchId, selectedCategory],
+  // Fetch products when branch is selected
+  const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
+    queryKey: ["products", brandReference, selectedBranch?.id, selectedCategory],
     queryFn: async () => {
       const params = new URLSearchParams({
-        brandReference: brandSlug!,
+        brandReference: brandReference,
         pageNo: "1",
         pageSize: "1000",
-        branchId: branchId!.toString(),
+        branchId: selectedBranch!.id.toString(),
       });
 
       if (selectedCategory !== null) {
@@ -107,98 +107,193 @@ const MenuPage = () => {
       if (error) throw error;
       return data.data || [];
     },
-    enabled: isValidParams && !!branchId,
+    enabled: !!selectedBranch,
   });
 
-  // CHANGE: Helper function to fix image URL
   const getFullImageUrl = (imagePath: string | null | undefined) => {
     if (!imagePath) return null;
     if (imagePath.startsWith("http")) return imagePath;
     return `${API_BASE_URL}/${imagePath.replace(/^\/+/, "")}`;
   };
 
-  if (!isValidParams) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
-        <div className="text-center px-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-4">
-            {t("Invalid URL", "رابط غير صالح")}
-          </h1>
-          <p className="text-muted-foreground mb-6 text-sm sm:text-base">
-            {t(
-              "Please use a valid brand and branch URL",
-              "يرجى استخدام رابط صالح للعلامة التجارية والفرع"
-            )}
-          </p>
-          <Link to="/">
-            <Button className="gap-2">
-              <Home className="w-4 h-4" />
-              {t("Go to Home", "اذهب للرئيسية")}
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const handleBranchSelect = (branch: Branch) => {
+    setSelectedBranch(branch);
+    setSelectedCategory(null);
+  };
 
+  const handleBackToBranches = () => {
+    setSelectedBranch(null);
+    setSelectedCategory(null);
+  };
+
+  // Branch list pagination
+  const activeBranches = branchData?.data || [];
+  const totalPages = Math.ceil(activeBranches.length / BRANCHES_PER_PAGE);
+  const startIndex = (currentPage - 1) * BRANCHES_PER_PAGE;
+  const paginatedBranches = activeBranches.slice(
+    startIndex,
+    startIndex + BRANCHES_PER_PAGE
+  );
+
+  // Loading state for branches
   if (branchLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!currentBranch) {
+  // Error state for branches
+  if (branchError || !branchData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center px-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-4">
-            {t("Branch Not Found", "الفرع غير موجود")}
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            {t("Error Loading Branches", "خطأ في تحميل الفروع")}
           </h1>
-          <p className="text-muted-foreground mb-6 text-sm sm:text-base">
-            {t(
-              "The branch you're looking for doesn't exist",
-              "الفرع الذي تبحث عنه غير موجود"
-            )}
+          <p className="text-muted-foreground">
+            {t("Please try again later", "يرجى المحاولة مرة أخرى لاحقاً")}
           </p>
-          <Link to={`/menu/${brandSlug}`}>
-            <Button className="gap-2">
-              {t("View All Branches", "عرض جميع الفروع")}
-            </Button>
-          </Link>
         </div>
       </div>
     );
   }
 
+  // Branch selection view
+  if (!selectedBranch) {
+    return (
+      <div
+        className="min-h-screen bg-muted/30"
+        dir={language === "ar" ? "rtl" : "ltr"}
+      >
+        {/* Header */}
+        <div className="bg-primary text-primary-foreground py-6 sm:py-8 px-4">
+          <div className="container mx-auto max-w-4xl text-center">
+            <h1 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">
+              {t("Our Branches", "فروعنا")}
+            </h1>
+            <p className="text-primary-foreground/80 text-xs sm:text-sm">
+              {t("Select a branch to view the menu", "اختر فرعاً لعرض القائمة")}
+            </p>
+          </div>
+        </div>
+
+        {/* Branch Grid */}
+        <div className="container mx-auto px-4 py-4 sm:py-6 max-w-4xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {paginatedBranches.map((branch) => (
+              <BranchCard
+                key={branch.id}
+                branch={branch}
+                brandSlug={brandReference}
+                onClick={() => handleBranchSelect(branch)}
+              />
+            ))}
+          </div>
+
+          {activeBranches.length === 0 && (
+            <div className="text-center py-16">
+              <MapPin className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                {t("No branches available", "لا توجد فروع متاحة")}
+              </p>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="gap-1"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">
+                  {t("Previous", "السابق")}
+                </span>
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  )
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="gap-1"
+              >
+                <span className="hidden sm:inline">{t("Next", "التالي")}</span>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Menu view when branch is selected
   return (
     <div
       className="min-h-screen bg-muted/30"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
+      {/* Back button */}
+      <div className="bg-background border-b">
+        <div className="container mx-auto px-4 py-2 max-w-7xl">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToBranches}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t("Back to Branches", "العودة للفروع")}
+          </Button>
+        </div>
+      </div>
+
       <MenuHeader
-        branchName={currentBranch?.name}
-        branchNameAr={currentBranch?.arabicName}
-        // CHANGE: Yahan getFullImageUrl function use kiya gaya hai
-        branchImage={getFullImageUrl(currentBranch?.image)}
+        branchName={selectedBranch.name}
+        branchNameAr={selectedBranch.arabicName}
+        branchImage={getFullImageUrl(selectedBranch.image)}
       />
 
       <CategoryNav
         selectedCategory={selectedCategory}
         onCategoryChange={setSelectedCategory}
-        brandSlug={brandSlug!}
-        branchId={branchId!}
+        brandSlug={brandReference}
+        branchId={selectedBranch.id}
       />
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
-        {isLoading && (
+        {productsLoading && (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         )}
 
-        {error && (
+        {productsError && (
           <div className="text-center py-20">
             <p className="text-destructive text-sm sm:text-base">
               {t("Failed to load products", "فشل تحميل المنتجات")}
@@ -206,8 +301,8 @@ const MenuPage = () => {
           </div>
         )}
 
-        {data && (
-          <ProductGrid products={data} onProductClick={setSelectedProduct} />
+        {productsData && (
+          <ProductGrid products={productsData} onProductClick={setSelectedProduct} />
         )}
       </main>
 
