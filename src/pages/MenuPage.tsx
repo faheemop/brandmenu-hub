@@ -6,10 +6,17 @@ import { ProductGrid } from "@/components/menu/ProductGrid";
 import { CategoryNav } from "@/components/menu/CategoryNav";
 import { MenuHeader } from "@/components/menu/MenuHeader";
 import { ProductDetailDialog } from "@/components/menu/ProductDetailDialog";
-import { Loader2, MapPin, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BranchCard, generateSlug } from "@/components/menu/BranchCard";
+import { AllergensDialog } from "@/components/menu/AllergensDialog";
 
 const API_BASE_URL = "https://api-order.wags.sa";
 const DEFAULT_BRAND_REFERENCE = "CODE231025109";
@@ -97,8 +104,17 @@ const MenuPage = () => {
   }, [branchSlug, branchData, selectedBranch]);
 
   // Fetch products when branch is selected
-  const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
-    queryKey: ["products", brandReference, selectedBranch?.id, selectedCategory],
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    error: productsError,
+  } = useQuery({
+    queryKey: [
+      "products",
+      brandReference,
+      selectedBranch?.id,
+      selectedCategory,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams({
         brandReference: brandReference,
@@ -141,11 +157,12 @@ const MenuPage = () => {
   const handleBackToBranches = () => {
     setSelectedBranch(null);
     setSelectedCategory(null);
-    navigate('/menu');
+    navigate("/menu");
   };
 
   // Branch list pagination
-  const activeBranches = branchData?.data || [];
+  const activeBranches =
+    branchData?.data?.filter((branch) => branch.active) || [];
   const totalPages = Math.ceil(activeBranches.length / BRANCHES_PER_PAGE);
   const startIndex = (currentPage - 1) * BRANCHES_PER_PAGE;
   const paginatedBranches = activeBranches.slice(
@@ -185,15 +202,25 @@ const MenuPage = () => {
         className="min-h-screen bg-muted/30"
         dir={language === "ar" ? "rtl" : "ltr"}
       >
-        {/* Header */}
+        {/* Header - Added Flex and License Dialog */}
         <div className="bg-primary text-primary-foreground py-6 sm:py-8 px-4">
-          <div className="container mx-auto max-w-4xl text-center">
-            <h1 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">
-              {t("Our Branches", "فروعنا")}
-            </h1>
-            <p className="text-primary-foreground/80 text-xs sm:text-sm">
-              {t("Select a branch to view the menu", "اختر فرعاً لعرض القائمة")}
-            </p>
+          <div className="container mx-auto max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-start flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">
+                {t("Our Branches", "فروعنا")}
+              </h1>
+              <p className="text-primary-foreground/80 text-xs sm:text-sm">
+                {t(
+                  "Select a branch to view the menu",
+                  "اختر فرعاً لعرض القائمة"
+                )}
+              </p>
+            </div>
+
+            {/* Added License Pill here */}
+            <div className="flex-shrink-0">
+              <AllergensDialog variant="header" />
+            </div>
           </div>
         </div>
 
@@ -320,7 +347,10 @@ const MenuPage = () => {
         )}
 
         {productsData && (
-          <ProductGrid products={productsData} onProductClick={setSelectedProduct} />
+          <ProductGrid
+            products={productsData}
+            onProductClick={setSelectedProduct}
+          />
         )}
       </main>
 

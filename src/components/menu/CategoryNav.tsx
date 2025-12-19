@@ -16,13 +16,14 @@ interface Category {
   id: number;
   name: string;
   arabicName: string | null;
+  sortOrder: number;
 }
 
-export const CategoryNav = ({ 
-  selectedCategory, 
-  onCategoryChange, 
+export const CategoryNav = ({
+  selectedCategory,
+  onCategoryChange,
   brandSlug,
-  branchId 
+  branchId,
 }: CategoryNavProps) => {
   const { language, t } = useLanguage();
 
@@ -30,15 +31,18 @@ export const CategoryNav = ({
     queryKey: ["categories", brandSlug, branchId],
     queryFn: async () => {
       if (!brandSlug || !branchId) return [];
-      
+
       const params = new URLSearchParams({
         brandReference: brandSlug,
         branchId: branchId.toString(),
       });
-      
-      const { data, error } = await supabase.functions.invoke(`get-categories?${params.toString()}`, {
-        method: 'GET',
-      });
+
+      const { data, error } = await supabase.functions.invoke(
+        `get-categories?${params.toString()}`,
+        {
+          method: "GET",
+        }
+      );
 
       if (error) throw error;
       return data.data || [];
@@ -46,7 +50,6 @@ export const CategoryNav = ({
     enabled: !!brandSlug && !!branchId,
   });
 
-  // Get display name with Arabic fallback to English
   const getCategoryDisplayName = (category: Category) => {
     if (language === "ar") {
       return category.arabicName || category.name;
@@ -54,33 +57,59 @@ export const CategoryNav = ({
     return category.name;
   };
 
+  const orderedCategories =
+    categories
+      ?.filter((c: Category) => c.sortOrder > 0)
+      .sort((a: Category, b: Category) => a.sortOrder - b.sortOrder) || [];
+
+  const unorderedCategories =
+    categories
+      ?.filter((c: Category) => c.sortOrder === 0)
+      .sort((a: Category, b: Category) => {
+        const nameA = getCategoryDisplayName(a);
+        const nameB = getCategoryDisplayName(b);
+        return nameA.localeCompare(nameB, language === "ar" ? "ar" : "en");
+      }) || [];
+
+  const displayCategories = [...orderedCategories, ...unorderedCategories];
+
   return (
-    <div className="border-b border-border bg-card sticky top-[80px] sm:top-[88px] z-40">
-      <ScrollArea className="w-full">
+    // FIX: Updated top position to match MenuHeader height exactly on Mobile vs Desktop
+    // Mobile Header ~77px | Desktop Header ~81px
+    <div className="border-b border-border bg-card sticky top-[77px] md:top-[81px] z-40 shadow-sm transition-[top] duration-200">
+      <ScrollArea className="w-full whitespace-nowrap">
         <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex gap-2 py-2 sm:py-3">
+          <div className="flex w-max space-x-2 py-3">
             {isLoading ? (
               <div className="flex items-center gap-2 text-muted-foreground py-1">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-xs sm:text-sm">{t("Loading categories...", "جاري تحميل الفئات...")}</span>
+                <span className="text-xs sm:text-sm">
+                  {t("Loading categories...", "جاري تحميل الفئات...")}
+                </span>
               </div>
             ) : (
               <>
                 <Button
-                  variant={selectedCategory === null ? "default" : "ghost"}
+                  variant={selectedCategory === null ? "default" : "secondary"}
                   size="sm"
                   onClick={() => onCategoryChange(null)}
-                  className="whitespace-nowrap text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
+                  className="rounded-full px-4 h-8 text-xs sm:text-sm font-medium transition-colors"
                 >
                   {t("All", "الكل")}
                 </Button>
-                {categories?.map((category: Category) => (
+                {displayCategories.map((category: Category) => (
                   <Button
                     key={category.id}
-                    variant={selectedCategory === category.id ? "default" : "ghost"}
+                    variant={
+                      selectedCategory === category.id ? "default" : "ghost"
+                    }
                     size="sm"
                     onClick={() => onCategoryChange(category.id)}
-                    className="whitespace-nowrap text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
+                    className={`rounded-full px-4 h-8 text-xs sm:text-sm font-medium transition-colors ${
+                      selectedCategory === category.id
+                        ? ""
+                        : "bg-muted/50 hover:bg-muted text-muted-foreground"
+                    }`}
                   >
                     {getCategoryDisplayName(category)}
                   </Button>
@@ -89,7 +118,7 @@ export const CategoryNav = ({
             )}
           </div>
         </div>
-        <ScrollBar orientation="horizontal" />
+        <ScrollBar orientation="horizontal" className="invisible" />
       </ScrollArea>
     </div>
   );
