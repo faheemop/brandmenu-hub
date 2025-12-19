@@ -26,9 +26,9 @@ interface BranchCardProps {
 const generateSlug = (name: string, id: number): string => {
   const slug = name
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
     .trim();
   return slug || `branch-${id}`;
 };
@@ -39,6 +39,9 @@ export const BranchCard = ({ branch, brandSlug, onClick }: BranchCardProps) => {
 
   const displayName =
     language === "ar" && branch.arabicName ? branch.arabicName : branch.name;
+
+  // Note: displayAddress variable was unused in your provided snippet,
+  // but kept logic here in case you use it later.
   const displayAddress =
     language === "ar" && branch.arabicAddress
       ? branch.arabicAddress
@@ -77,16 +80,11 @@ export const BranchCard = ({ branch, brandSlug, onClick }: BranchCardProps) => {
                 {displayName}
               </h3>
             </div>
-
-            <p className="text-muted-foreground text-sm truncate mb-2">
-              {displayAddress}
-            </p>
-
             <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
               <Clock className="w-3 h-3" />
               <span>
                 {branch.is24Hours
-                  ? t("24 Hours", "٢٤ ساعة")
+                  ? t("24/7 Hours", "٢٤/٧ ساعة") // Updated here
                   : `${branch.opening_time} - ${branch.closing_time}`}
               </span>
             </div>
