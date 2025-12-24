@@ -22,7 +22,10 @@ interface ProductGridProps {
 export const ProductGrid = ({ products, onProductClick }: ProductGridProps) => {
   const { t } = useLanguage();
 
-  if (!products || products.length === 0) {
+  // Filter out inactive/unavailable products
+  const activeProducts = products?.filter(product => product.is_active) || [];
+
+  if (activeProducts.length === 0) {
     return (
       <div className="text-center py-16 sm:py-20">
         <p className="text-muted-foreground text-sm sm:text-base">
@@ -34,7 +37,7 @@ export const ProductGrid = ({ products, onProductClick }: ProductGridProps) => {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
-      {products.map((product) => (
+      {activeProducts.map((product) => (
         <ProductCard 
           key={product.id} 
           product={product} 
