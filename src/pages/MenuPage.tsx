@@ -297,26 +297,31 @@ const MenuPage = () => {
     );
   }
 
+  // Check if this is the "BRGR Ramalina" branch (hide back button for this branch)
+  const hideBranchNavigation = selectedBranch.name.toLowerCase().includes("brgr ramalina");
+
   // Menu view when branch is selected
   return (
     <div
       className="min-h-screen bg-muted/30"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
-      {/* Back button */}
-      <div className="bg-background border-b">
-        <div className="container mx-auto px-4 py-2 max-w-7xl">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBackToBranches}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            {t("Back to Branches", "العودة للفروع")}
-          </Button>
+      {/* Back button - hidden for BRGR Ramalina branch */}
+      {!hideBranchNavigation && (
+        <div className="bg-background border-b">
+          <div className="container mx-auto px-4 py-2 max-w-7xl">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToBranches}
+              className="gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t("Back to Branches", "العودة للفروع")}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <MenuHeader
         branchName={selectedBranch.name}
